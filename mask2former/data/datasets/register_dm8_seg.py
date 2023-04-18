@@ -19,7 +19,7 @@ def get_image_size(path):
     im = cv2.imread(path)
     return im.shape[:2] 
 
-def dm_train_dicts(root):
+def dm_train_dicts(root, split=None):
     dm_root = osp.join(root, "DiffuseMade8")
     data_info_path = osp.join(dm_root, "data_infos.json")
     with open(data_info_path, 'r') as fp:
@@ -28,10 +28,23 @@ def dm_train_dicts(root):
     img_dir = osp.join(dm_root, 'img_dir', 'train')
     seg_dir = osp.join(dm_root, 'out_combine', 'out_ann_dir', 'tanh2-0.25-4.0-dcrf-0.05-0.95')
 
+    file_list = []
+    if split is None:
+        file_list = [i for i in range(len(data_info))]
+    else:
+        split_path = osp.join(dm_root, split)
+        with open(split_path, 'r') as fp:
+            while True:
+                a_line = fp.readline()
+                if not a_line:
+                    break
+                file_list.append(a_line.strip())
+    
+
     dataset_dicts = []
-    for di in data_info:
+    for name in file_list:
         record = {}
-        record['image_id'] = int(di['img_index'])
+        record['image_id'] = int(name)
         filename = f"{record['image_id']:08}.png"
         record['file_name'] = osp.join(img_dir, 
                                       filename)
