@@ -20,7 +20,7 @@ def get_image_size(path):
     return im.shape[:2] 
 
 def dm_train_dicts(root):
-    dm_root = osp.join(root, "DiffusionMade8")
+    dm_root = osp.join(root, "DiffuseMade8")
     data_info_path = osp.join(dm_root, "data_infos.json")
     with open(data_info_path, 'r') as fp:
         data_info = json.load(fp)
@@ -43,32 +43,32 @@ def dm_train_dicts(root):
         dataset_dicts.append(record)
     return dataset_dicts
 
-def voc_val_dicts(root):
-    voc_root = osp.join(root, 'VOCdevkit', 'VOC2012')
-    val_split_path = osp.join(voc_root, 'ImageSets', 'Segmentation', 'val.txt')
-    val_names = []
-    with open(val_split_path, 'r') as fp:
-        while True:
-            aline = fp.readline()
-            if not aline:
-                break
-            val_names.append(aline.strip())
-    img_dir = osp.join(voc_root, 'JPEGImages')
-    seg_dir = osp.join(voc_root, 'SegmentationClassAUG')
-    dataset_dicts = []
-    for idx, name in enumerate(val_names):
-        record = {}
-        record['image_id'] = idx
-        record['file_name'] = osp.join(img_dir, name + '.jpg')
-        assert osp.isfile(record['file_name']), f"No such file: {record['file_name']}"
-        record['height'], record['width'] = get_image_size(record['file_name'])
-        record['sem_seg_file_name'] = osp.join(seg_dir, name + '.png')
-        dataset_dicts.append(record)
-    return dataset_dicts
+# def voc_val_dicts(root):
+#     voc_root = osp.join(root, 'VOCdevkit', 'VOC2012')
+#     val_split_path = osp.join(voc_root, 'ImageSets', 'Segmentation', 'val.txt')
+#     val_names = []
+#     with open(val_split_path, 'r') as fp:
+#         while True:
+#             aline = fp.readline()
+#             if not aline:
+#                 break
+#             val_names.append(aline.strip())
+#     img_dir = osp.join(voc_root, 'JPEGImages')
+#     seg_dir = osp.join(voc_root, 'SegmentationClassAUG')
+#     dataset_dicts = []
+#     for idx, name in enumerate(val_names):
+#         record = {}
+#         record['image_id'] = idx
+#         record['file_name'] = osp.join(img_dir, name + '.jpg')
+#         assert osp.isfile(record['file_name']), f"No such file: {record['file_name']}"
+#         record['height'], record['width'] = get_image_size(record['file_name'])
+#         record['sem_seg_file_name'] = osp.join(seg_dir, name + '.png')
+#         dataset_dicts.append(record)
+#     return dataset_dicts
 
 def register_dm8_seg(root):
     train_name = 'dm8_seg_train'
-    val_name = 'voc_seg_val'
+    # val_name = 'voc_seg_val'
 
     DatasetCatalog.register(train_name, lambda root=root: dm_train_dicts(root))
     MetadataCatalog.get(train_name).set(
@@ -77,13 +77,13 @@ def register_dm8_seg(root):
         ignore_label=255,
     )
 
-    DatasetCatalog.register(val_name, lambda root=root: voc_val_dicts(root))
-    MetadataCatalog.get(val_name).set(
-        stuff_classes=VOC_CLASSES,
-        stuff_colors=VOC_PALETTE,
-        ignore_label=255,
-        evaluator_type="sem_seg",
-    )
+    # DatasetCatalog.register(val_name, lambda root=root: voc_val_dicts(root))
+    # MetadataCatalog.get(val_name).set(
+    #     stuff_classes=VOC_CLASSES,
+    #     stuff_colors=VOC_PALETTE,
+    #     ignore_label=255,
+    #     evaluator_type="sem_seg",
+    # )
 
 
 _root = os.getenv("DETECTRON2_DATASETS", "datasets")
