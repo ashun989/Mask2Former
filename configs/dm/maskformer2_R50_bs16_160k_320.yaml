@@ -1,0 +1,5 @@
+_BASE_: maskformer2_R50_bs16_160k.yaml
+INPUT:
+  CROP:
+    SIZE: (320, 320)
+  SIZE_DIVISIBILITY: 320  # used in dataset mapper
