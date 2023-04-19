@@ -58,6 +58,8 @@ from mask2former import (
     add_maskformer2_config,
 )
 
+from mask2former.utils.others import parse_path
+
 
 class Trainer(DefaultTrainer):
     """
@@ -288,6 +290,8 @@ def setup(args):
     add_maskformer2_config(cfg)
     cfg.merge_from_file(args.config_file)
     cfg.merge_from_list(args.opts)
+    config_name= parse_path(args.config_file)[1]
+    cfg.OUTPUT_DIR = os.path.join("outputs", config_name)
     cfg.freeze()
     default_setup(cfg, args)
     # Setup logger for "mask_former" module
