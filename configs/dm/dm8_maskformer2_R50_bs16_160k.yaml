@@ -1,0 +1,5 @@
+_BASE_: dm8_maskformer2_R50_bs16_80k_right.yaml
+DATASETS:
+  TRAIN: ("dm8_seg_train",)
+SOLVER:
+  MAX_ITER: 160000

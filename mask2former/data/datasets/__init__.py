@@ -7,6 +7,7 @@ from . import (
     register_dm8_seg,
     register_dm8_1_seg,
     register_dm8_2_seg,
+    register_dm_seg,
     register_mapillary_vistas,
     register_coco_panoptic_annos_semseg,
     register_ade20k_instance,
