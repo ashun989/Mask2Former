@@ -9,15 +9,17 @@ VOC_CLASSES = ['background', 'aeroplane', 'bicycle', 'bird', 'boat', 'bottle',
                'horse', 'motorbike', 'person', 'pottedplant', 'sheep', 'sofa',
                'train', 'tvmonitor']
 
-VOC_PALETTE = [(0, 0, 0), (128, 0, 0), (0, 128, 0), (128, 128, 0), (0, 0, 128), 
-               (128, 0, 128), (0, 128, 128), (128, 128, 128), (64, 0, 0), (192, 0, 0), 
-               (64, 128, 0), (192, 128, 0), (64, 0, 128), (192, 0, 128), (64, 128, 128), 
-               (192, 128, 128), (0, 64, 0), (128, 64, 0), (0, 192, 0), (128, 192, 0), 
+VOC_PALETTE = [(0, 0, 0), (128, 0, 0), (0, 128, 0), (128, 128, 0), (0, 0, 128),
+               (128, 0, 128), (0, 128, 128), (128, 128, 128), (64, 0, 0), (192, 0, 0),
+               (64, 128, 0), (192, 128, 0), (64, 0, 128), (192, 0, 128), (64, 128, 128),
+               (192, 128, 128), (0, 64, 0), (128, 64, 0), (0, 192, 0), (128, 192, 0),
                (0, 64, 128)]
+
 
 def get_image_size(path):
     im = cv2.imread(path)
-    return im.shape[:2] 
+    return im.shape[:2]
+
 
 def dm_train_dicts(root, dm_name, ann_dir, split=None):
     dm_root = osp.join(root, dm_name)
@@ -39,15 +41,14 @@ def dm_train_dicts(root, dm_name, ann_dir, split=None):
                 if not a_line:
                     break
                 file_list.append(a_line.strip())
-    
 
     dataset_dicts = []
     for name in file_list:
         record = {}
         record['image_id'] = int(name)
         filename = f"{record['image_id']:08}.png"
-        record['file_name'] = osp.join(img_dir, 
-                                      filename)
+        record['file_name'] = osp.join(img_dir,
+                                       filename)
         assert osp.isfile(record['file_name']), f"No such file: {record['file_name']}"
         record['height'] = 512
         record['width'] = 512
@@ -56,8 +57,13 @@ def dm_train_dicts(root, dm_name, ann_dir, split=None):
         dataset_dicts.append(record)
     return dataset_dicts
 
+
 def register_dm_seg(root, train_name, dm_name, ann_dir, split=None):
-    DatasetCatalog.register(train_name, lambda root=root, dm_name=dm_name, ann_dir=ann_dir, split=split: dm_train_dicts(root, dm_name, ann_dir, split))
+    DatasetCatalog.register(train_name,
+                            lambda root=root, dm_name=dm_name, ann_dir=ann_dir, split=split: dm_train_dicts(root,
+                                                                                                            dm_name,
+                                                                                                            ann_dir,
+                                                                                                            split))
     MetadataCatalog.get(train_name).set(
         stuff_classes=VOC_CLASSES,
         stuff_colors=VOC_PALETTE,
@@ -75,4 +81,11 @@ def register_dm_seg(root, train_name, dm_name, ann_dir, split=None):
 
 _root = os.getenv("DETECTRON2_DATASETS", "datasets")
 register_dm_seg(_root, "dm10_ann_seg_train", "DiffuseMade10", "out_ann/out_ann_dir/tanh2-0.4-4.0-dcrf-0.05-0.95")
-register_dm_seg(_root, "dm10_combine_seg_train", "DiffuseMade10", "out_combine/out_ann_dir/tanh2-0.25-4.0-dcrf-0.05-0.95")
+register_dm_seg(_root, "dm10_combine_seg_train", "DiffuseMade10",
+                "out_combine/out_ann_dir/tanh2-0.25-4.0-dcrf-0.05-0.95")
+register_dm_seg(_root, "dm10_combine_sub-1_seg_train", "DiffuseMade10",
+                "out_combine/out_ann_dir/tanh2-0.25-4.0-dcrf-0.05-0.95",
+                "imageset/cls_1/good.txt")
+register_dm_seg(_root, "dm10_combine_sub-2_seg_train", "DiffuseMade10",
+                "out_combine/out_ann_dir/tanh2-0.25-4.0-dcrf-0.05-0.95",
+                "imageset/cls_2/good.txt")

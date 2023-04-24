@@ -1,0 +1,4 @@
+_BASE_: dm8_2_maskformer2_R50_bs16_80k.yaml
+INPUT:
+  CROP:
+    SIZE: (320, 320)
