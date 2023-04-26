@@ -1,3 +1,3 @@
 _BASE_: dm10-ann_maskformer2_R50_bs16_160k.yaml
 DATASETS:
-  TRAIN: ("dm10_combine_sub-4_seg_train",)
+  TRAIN: ("dm10_combine_sub-5_seg_train",)
