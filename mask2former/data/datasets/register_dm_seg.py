@@ -89,3 +89,12 @@ register_dm_seg(_root, "dm10_combine_sub-1_seg_train", "DiffuseMade10",
 register_dm_seg(_root, "dm10_combine_sub-2_seg_train", "DiffuseMade10",
                 "out_combine/out_ann_dir/tanh2-0.25-4.0-dcrf-0.05-0.95",
                 "imageset/cls_2/good.txt")
+register_dm_seg(_root, "dm10_combine_sub-3_seg_train", "DiffuseMade10",
+                "out_combine/out_ann_dir/tanh2-0.25-4.0-dcrf-0.05-0.95",
+                "imageset/cls_3/good.txt")
+register_dm_seg(_root, "dm10_combine_sub-4_seg_train", "DiffuseMade10",
+                "out_combine/out_ann_dir/tanh2-0.25-4.0-dcrf-0.05-0.95",
+                "imageset/seg_2/good.txt")
+register_dm_seg(_root, "dm10_combine_sub-5_seg_train", "DiffuseMade10",
+                "out_combine/out_ann_dir/tanh2-0.25-4.0-dcrf-0.05-0.95",
+                "imageset/seg_3/good.txt")
