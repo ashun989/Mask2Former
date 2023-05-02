@@ -105,3 +105,7 @@ register_dm_seg(_root, "dm10_clipes_seg_train", "DiffuseMade10",
 register_dm_seg(_root, "dm10_combine_clip_fix_box-nms_p600", "DiffuseMade10",
                 "out_combine/out_ann_dir/tanh2-0.25-4.0-dcrf-0.05-0.95",
                 "imageset/clip_fix_box-nms_p600/good.txt")
+
+register_dm_seg(_root, "dm10_combine_clip_fix_box-nms_p800", "DiffuseMade10",
+                "out_combine/out_ann_dir/tanh2-0.25-4.0-dcrf-0.05-0.95",
+                "imageset/clip_fix_box-nms_p800/good.txt")
