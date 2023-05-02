@@ -1,0 +1,3 @@
+_BASE_: dm11-ann_maskformer2_R50_bs16_160k.yaml
+DATASETS:
+  TRAIN: ("dm11_combine",)
