@@ -109,3 +109,19 @@ register_dm_seg(_root, "dm10_combine_clip_fix_box-nms_p600", "DiffuseMade10",
 register_dm_seg(_root, "dm10_combine_clip_fix_box-nms_p800", "DiffuseMade10",
                 "out_combine/out_ann_dir/tanh2-0.25-4.0-dcrf-0.05-0.95",
                 "imageset/clip_fix_box-nms_p800/good.txt")
+
+register_dm_seg(_root, "dm10_combine_clip_fix_box-single_p500", "DiffuseMade10",
+                "out_combine/out_ann_dir/tanh2-0.25-4.0-dcrf-0.05-0.95",
+                "imageset/clip_fix_box-single_p500/good.txt")
+
+register_dm_seg(_root, "dm10_combine_blip_fix_box-single_p500", "DiffuseMade10",
+                "out_combine/out_ann_dir/tanh2-0.25-4.0-dcrf-0.05-0.95",
+                "imageset/blip_fix_box-single_p500/good.txt")
+
+# ====================================================================
+
+register_dm_seg(_root, "dm11_ann", "DiffuseMade11", 
+                "out_ann/out_ann_dir/tanh2-0.25-4.0-dcrf-0.05-0.95")
+
+register_dm_seg(_root, "dm11_combine", "DiffuseMade11", 
+                "out_combine/out_ann_dir/tanh2-0.15-4.0-dcrf-0.05-0.95")

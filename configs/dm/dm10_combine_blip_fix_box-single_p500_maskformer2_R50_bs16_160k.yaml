@@ -1,0 +1,3 @@
+_BASE_: dm10-ann_maskformer2_R50_bs16_160k.yaml
+DATASETS:
+  TRAIN: ("dm10_combine_blip_fix_box-single_p500",)
