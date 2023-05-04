@@ -83,6 +83,10 @@ _root = os.getenv("DETECTRON2_DATASETS", "datasets")
 register_dm_seg(_root, "dm10_ann_seg_train", "DiffuseMade10", "out_ann/out_ann_dir/tanh2-0.4-4.0-dcrf-0.05-0.95")
 register_dm_seg(_root, "dm10_combine_seg_train", "DiffuseMade10",
                 "out_combine/out_ann_dir/tanh2-0.25-4.0-dcrf-0.05-0.95")
+
+register_dm_seg(_root, "dm10_combine_trough-0.2-5000-0.1", "DiffuseMade10",
+                "out_combine/out_ann_dir/trough-0.2-5000-0.1-dcrf-0.05-0.95")
+
 register_dm_seg(_root, "dm10_combine_sub-1_seg_train", "DiffuseMade10",
                 "out_combine/out_ann_dir/tanh2-0.25-4.0-dcrf-0.05-0.95",
                 "imageset/cls_1/good.txt")
@@ -108,6 +112,10 @@ register_dm_seg(_root, "dm10_combine_clip_fix_box-nms_p600", "DiffuseMade10",
 
 register_dm_seg(_root, "dm10_combine_clip_fix_box-single_p500", "DiffuseMade10",
                 "out_combine/out_ann_dir/tanh2-0.25-4.0-dcrf-0.05-0.95",
+                "imageset/clip_fix_box-single_p500/good.txt")
+
+register_dm_seg(_root, "dm10_combine_trough_clip_fix_box-single_p500", "DiffuseMade10",
+                "out_combine/out_ann_dir/trough-0.2-5000-0.1-dcrf-0.05-0.95",
                 "imageset/clip_fix_box-single_p500/good.txt")
 
 register_dm_seg(_root, "dm10_combine_blip_fix_box-single_p500", "DiffuseMade10",
