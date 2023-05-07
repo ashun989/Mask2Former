@@ -90,6 +90,12 @@ register_dm_seg(_root, "dm10_combine_trough-0.2-5000-4.0", "DiffuseMade10",
 register_dm_seg(_root, "dm10_combine_trough2-0.2-5000-4.0", "DiffuseMade10",
                 "out_combine/out_ann_dir/trough2-0.2-5000-4.0-dcrf-0.05-0.95")
 
+register_dm_seg(_root, "dm10_combine_trough3-0.2-5000", "DiffuseMade10",
+                "out_combine/out_ann_dir/trough3-0.2-5000-dcrf-0.05-0.95")
+
+register_dm_seg(_root, "dm10_cross_valley-3-500", "DiffuseMade10",
+                "out_cross/out_ann_dir/valley-3-500-dcrf-0.05-0.95")
+
 register_dm_seg(_root, "dm10_combine_sub-1_seg_train", "DiffuseMade10",
                 "out_combine/out_ann_dir/tanh2-0.25-4.0-dcrf-0.05-0.95",
                 "imageset/cls_1/good.txt")
