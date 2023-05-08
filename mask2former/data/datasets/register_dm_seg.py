@@ -154,3 +154,8 @@ register_dm_seg(_root, "dm11_ann", "DiffuseMade11",
 
 register_dm_seg(_root, "dm11_combine", "DiffuseMade11", 
                 "out_combine/out_ann_dir/tanh2-0.15-4.0-dcrf-0.05-0.95")
+
+# ====================================================================
+
+register_dm_seg(_root, "dm12_cross_valley-3-500", "DiffuseMade12",
+                "out_cross/out_ann_dir/valley-3-500-dcrf-0.05-0.95")
