@@ -158,4 +158,13 @@ register_dm_seg(_root, "dm11_combine", "DiffuseMade11",
 # ====================================================================
 
 register_dm_seg(_root, "dm12_cross_valley-3-500", "DiffuseMade12",
-                "out_cross/out_ann_dir/valley-3-500-dcrf-0.05-0.95")
+                "out_cross/out_ann_dir/valley-3-500-dcrf-0.05-0.95")  # 90k
+
+
+register_dm_seg(_root, "dm12_cross_valley-3-500_clip_fix_box-single_p1500", "DiffuseMade12",
+                "out_cross/out_ann_dir/valley-3-500-dcrf-0.05-0.95",
+                "imageset/cross_valley-3-500_clip_fix_box-single_p1500/good.txt")  # 60k
+
+register_dm_seg(_root, "dm12_cross_valley-3-500_clip_fix_box-single_p4000", "DiffuseMade12",
+                "out_cross/out_ann_dir/valley-3-500-dcrf-0.05-0.95",
+                "imageset/cross_valley-3-500_clip_fix_box-single_p4000/good.txt")  # 10k

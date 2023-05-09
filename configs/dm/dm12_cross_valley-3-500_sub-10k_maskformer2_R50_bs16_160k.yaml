@@ -1,0 +1,3 @@
+_BASE_: dm12_cross_valley-3-500_maskformer2_R50_bs16_160k.yaml
+DATASETS:
+  TRAIN: ("dm12_cross_valley-3-500_clip_fix_box-single_p4000",)

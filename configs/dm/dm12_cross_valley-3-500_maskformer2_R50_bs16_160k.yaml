@@ -3,6 +3,7 @@ DATASETS:
   TRAIN: ("dm12_cross_valley-3-500",)
 SOLVER:
   MAX_ITER: 160000
+SEED: 3047
 MODEL:
   META_ARCHITECTURE: "MaskFormer"
   SEM_SEG_HEAD:
