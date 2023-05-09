@@ -139,6 +139,10 @@ register_dm_seg(_root, "dm10_combine_trough2_clip_fix_box-single_p500_self", "Di
                 "out_combine/out_ann_dir/trough2-0.2-5000-4.0-dcrf-0.05-0.95",
                 "imageset/trough2-0.2-5000-4.0_clip_fix_box-single_p500/good.txt")
 
+register_dm_seg(_root, "dm10_cross_valley_clip_fix_box-single_p500_self", "DiffuseMade10",
+                "out_cross/out_ann_dir/valley-3-500-dcrf-0.05-0.95",
+                "imageset/croos_valley-3-500_clip_fix_box-single_p500/good.txt")
+
 register_dm_seg(_root, "dm10_combine_blip_fix_box-single_p500", "DiffuseMade10",
                 "out_combine/out_ann_dir/tanh2-0.25-4.0-dcrf-0.05-0.95",
                 "imageset/blip_fix_box-single_p500/good.txt")
