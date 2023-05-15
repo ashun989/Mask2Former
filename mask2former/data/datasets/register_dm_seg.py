@@ -21,27 +21,29 @@ def get_image_size(path):
     return im.shape[:2]
 
 
-def dm_train_dicts(root, dm_name, ann_dir, split=None):
-    dm_root = osp.join(root, dm_name)
-    data_info_path = osp.join(dm_root, "data_infos.json")
-    with open(data_info_path, 'r') as fp:
-        data_info = json.load(fp)
-
-    img_dir = osp.join(dm_root, 'img_dir', 'train')
-    seg_dir = osp.join(dm_root, ann_dir)
-
+def read_file_list(split_path, default_dir, default_suffix):
     file_list = []
-    if split is None:
-        file_list = [i for i in range(len(data_info))]
-    else:
-        split_path = osp.join(dm_root, split)
+    if split_path is not None:
         with open(split_path, 'r') as fp:
             while True:
                 a_line = fp.readline()
                 if not a_line:
                     break
                 file_list.append(a_line.strip())
+    else:
+        for fname in os.listdir(default_dir):
+            if fname.endswith(default_suffix):
+                file_list.append(osp.splitext(fname)[0])
+    return file_list
 
+
+def dm_train_dicts(root, dm_name, ann_dir, file_list):
+    dm_root = osp.join(root, dm_name)
+    # data_info_path = osp.join(dm_root, "data_infos.json")
+    # with open(data_info_path, 'r') as fp:
+    #     data_info = json.load(fp)
+    img_dir = osp.join(dm_root, 'img_dir', 'train')
+    seg_dir = osp.join(dm_root, ann_dir)
     dataset_dicts = []
     for name in file_list:
         record = {}
@@ -59,24 +61,27 @@ def dm_train_dicts(root, dm_name, ann_dir, split=None):
 
 
 def register_dm_seg(root, train_name, dm_name, ann_dir, split=None):
+    split_path = osp.join(root, dm_name, split) if split is not None else None
+    img_dir = osp.join(root, dm_name, 'img_dir', 'train')
+    seg_dir = osp.join(root, dm_name, ann_dir)
+    file_list = read_file_list(split_path, img_dir, '.png')
+
     DatasetCatalog.register(train_name,
-                            lambda root=root, dm_name=dm_name, ann_dir=ann_dir, split=split: dm_train_dicts(root,
-                                                                                                            dm_name,
-                                                                                                            ann_dir,
-                                                                                                            split))
+                            lambda root=root, dm_name=dm_name, ann_dir=ann_dir, file_list=file_list: dm_train_dicts(
+                                root,
+                                dm_name,
+                                ann_dir,
+                                file_list))
     MetadataCatalog.get(train_name).set(
         stuff_classes=VOC_CLASSES,
         stuff_colors=VOC_PALETTE,
         ignore_label=255,
+        file_list=file_list,
+        img_dir=img_dir,
+        seg_dir=seg_dir,
+        img_suffix='.png',
+        seg_suffix='.png'
     )
-
-    # DatasetCatalog.register(val_name, lambda root=root: voc_val_dicts(root))
-    # MetadataCatalog.get(val_name).set(
-    #     stuff_classes=VOC_CLASSES,
-    #     stuff_colors=VOC_PALETTE,
-    #     ignore_label=255,
-    #     evaluator_type="sem_seg",
-    # )
 
 
 _root = os.getenv("DETECTRON2_DATASETS", "datasets")
@@ -153,10 +158,10 @@ register_dm_seg(_root, "dm10_combine_clip_fix_box-max_p500", "DiffuseMade10",
 
 # ====================================================================
 
-register_dm_seg(_root, "dm11_ann", "DiffuseMade11", 
+register_dm_seg(_root, "dm11_ann", "DiffuseMade11",
                 "out_ann/out_ann_dir/tanh2-0.25-4.0-dcrf-0.05-0.95")
 
-register_dm_seg(_root, "dm11_combine", "DiffuseMade11", 
+register_dm_seg(_root, "dm11_combine", "DiffuseMade11",
                 "out_combine/out_ann_dir/tanh2-0.15-4.0-dcrf-0.05-0.95")
 
 # ====================================================================
@@ -164,10 +169,16 @@ register_dm_seg(_root, "dm11_combine", "DiffuseMade11",
 register_dm_seg(_root, "dm12_cross_valley-3-500", "DiffuseMade12",
                 "out_cross/out_ann_dir/valley-3-500-dcrf-0.05-0.95")  # 90k
 
+register_dm_seg(_root, "dm12_combine_linear-0.25", "DiffuseMade12",
+                "out_combine/out_ann_dir/linear-0.25-dcrf-0.05-0.95")  # 90k
 
 register_dm_seg(_root, "dm12_cross_valley-3-500_clip_fix_box-single_p1500", "DiffuseMade12",
                 "out_cross/out_ann_dir/valley-3-500-dcrf-0.05-0.95",
                 "imageset/cross_valley-3-500_clip_fix_box-single_p1500/good.txt")  # 60k
+
+register_dm_seg(_root, "dm12_combine_linear-0.25_clip_fix_box-single_p1500", "DiffuseMade12",
+                "out_combine/out_ann_dir/linear-0.25-dcrf-0.05-0.95",
+                "imageset/combine_linear-0.25_fix_box-single_p1500/good.txt")  # 60k
 
 register_dm_seg(_root, "dm12_cross_valley-3-500_clip_fix_box-single_p4000", "DiffuseMade12",
                 "out_cross/out_ann_dir/valley-3-500-dcrf-0.05-0.95",

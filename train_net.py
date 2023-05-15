@@ -54,6 +54,7 @@ from mask2former import (
     MaskFormerInstanceDatasetMapper,
     MaskFormerPanopticDatasetMapper,
     MaskFormerSemanticDatasetMapper,
+    MaskFormerSemanticDatasetMapper2,
     SemanticSegmentorWithTTA,
     add_maskformer2_config,
 )
@@ -153,6 +154,9 @@ class Trainer(DefaultTrainer):
         # Semantic segmentation dataset mapper
         if cfg.INPUT.DATASET_MAPPER_NAME == "mask_former_semantic":
             mapper = MaskFormerSemanticDatasetMapper(cfg, True)
+            return build_detection_train_loader(cfg, mapper=mapper)
+        elif cfg.INPUT.DATASET_MAPPER_NAME == "mask_former_semantic2":
+            mapper = MaskFormerSemanticDatasetMapper2(cfg, True)
             return build_detection_train_loader(cfg, mapper=mapper)
         # Panoptic segmentation dataset mapper
         elif cfg.INPUT.DATASET_MAPPER_NAME == "mask_former_panoptic":
@@ -301,7 +305,6 @@ def setup(args):
 
 def main(args):
     cfg = setup(args)
-
     if args.eval_only:
         model = Trainer.build_model(cfg)
         DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR).resume_or_load(

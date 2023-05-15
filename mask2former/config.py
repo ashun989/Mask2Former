@@ -18,6 +18,18 @@ def add_maskformer2_config(cfg):
     cfg.INPUT.CROP.SINGLE_CATEGORY_MAX_AREA = 1.0
     # Pad image and segmentation GT in dataset mapper.
     cfg.INPUT.SIZE_DIVISIBILITY = -1
+    # Copy-paste augumentation
+    cfg.INPUT.COPY_PASTE = CN()
+    cfg.INPUT.COPY_PASTE.ENABLED = False
+    cfg.INPUT.COPY_PASTE.BLEND = True
+    cfg.INPUT.COPY_PASTE.SIGMA = 3
+    cfg.INPUT.COPY_PASTE.RESIZE_RANGE = (0.8, 1.25)
+    cfg.INPUT.COPY_PASTE.CROP_SIZE = (0.8, 0.8)
+    cfg.INPUT.COPY_PASTE.PAD_VALUE = 128
+    cfg.INPUT.COPY_PASTE.SEG_PAD_VALUE = 255
+    cfg.INPUT.COPY_PASTE.FLIP_PROB = 0.5
+    cfg.INPUT.COPY_PASTE.PROB = 0.5
+    cfg.INPUT.COPY_PASTE.USE_SCALE_JITTOR = False
 
     # solver config
     # weight decay on embedding
