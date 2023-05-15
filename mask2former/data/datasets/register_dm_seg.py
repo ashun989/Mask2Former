@@ -22,7 +22,13 @@ def get_image_size(path):
     return im.shape[:2]
 
 
-def read_file_list(split_path, default_dir, default_suffix):
+def get_tmp_split_path(dm_root):
+    dir = osp.join(dm_root, "imageset")
+    os.makedirs(dir, exist_ok=True)
+    return osp.join(dm_root, "tmp_all.txt")
+
+
+def read_file_list(split_path, default_dir, default_suffix, dm_root):
     file_list = []
     if split_path is not None:
         with open(split_path, 'r') as fp:
@@ -32,19 +38,26 @@ def read_file_list(split_path, default_dir, default_suffix):
                     break
                 file_list.append(a_line.strip())
     else:
-        for fname in os.listdir(default_dir):
-            if fname.endswith(default_suffix):
-                file_list.append(osp.splitext(fname)[0])
+        tmp_path = get_tmp_split_path(dm_root)
+        with open(tmp_path, 'w') as fp:
+            for fname in os.listdir(default_dir):
+                if fname.endswith(default_suffix):
+                    name = osp.splitext(fname)[0]
+                    file_list.append(name)
+                    fp.write(f"{name}/n")
     return file_list
 
 
-def dm_train_dicts(root, dm_name, ann_dir, file_list):
-    dm_root = osp.join(root, dm_name)
+def dm_train_dicts(dm_root, ann_dir, split):
     # data_info_path = osp.join(dm_root, "data_infos.json")
     # with open(data_info_path, 'r') as fp:
     #     data_info = json.load(fp)
+
     img_dir = osp.join(dm_root, 'img_dir', 'train')
     seg_dir = osp.join(dm_root, ann_dir)
+
+    file_list = read_file_list(split, seg_dir, '.png', dm_root)
+
     dataset_dicts = []
     for name in file_list:
         record = {}
@@ -62,26 +75,24 @@ def dm_train_dicts(root, dm_name, ann_dir, file_list):
 
 
 def register_dm_seg(root, train_name, dm_name, ann_dir, split=None):
-    split_path = osp.join(root, dm_name, split) if split is not None else None
-    img_dir = osp.join(root, dm_name, 'img_dir', 'train')
-    seg_dir = osp.join(root, dm_name, ann_dir)
-    try:
-        file_list = read_file_list(split_path, img_dir, '.png')
-    except FileNotFoundError as e:
-        warnings.warn(f"File Not Found: {e}.\n Skip dataset: {train_name}")
+    if train_name in DatasetCatalog.keys():
         return
 
+    dm_root = osp.join(root, dm_name)
+    split_path = get_tmp_split_path(dm_root) if split is None else osp.join(dm_root, split)
+    img_dir = osp.join(dm_root, 'img_dir', 'train')
+    seg_dir = osp.join(dm_root, ann_dir)
+
     DatasetCatalog.register(train_name,
-                            lambda root=root, dm_name=dm_name, ann_dir=ann_dir, file_list=file_list: dm_train_dicts(
-                                root,
-                                dm_name,
+                            lambda dm_root=dm_root, ann_dir=ann_dir, split=split_path: dm_train_dicts(
+                                dm_root,
                                 ann_dir,
-                                file_list))
+                                split))
     MetadataCatalog.get(train_name).set(
         stuff_classes=VOC_CLASSES,
         stuff_colors=VOC_PALETTE,
         ignore_label=255,
-        file_list=file_list,
+        split_path=split_path,
         img_dir=img_dir,
         seg_dir=seg_dir,
         img_suffix='.png',
