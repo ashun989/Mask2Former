@@ -7,6 +7,7 @@ from detectron2.data import MetadataCatalog
 from detectron2.data import detection_utils as utils
 
 from .transform import CopyPasteTransform
+from ..datasets.register_dm_seg import read_file_list
 
 import numpy as np
 from PIL import Image
@@ -37,7 +38,9 @@ class CopyPaste(T.Augmentation):
                  use_scale_jittor=False
                  ):
         _meta = MetadataCatalog.get(dataset_name)
-        self.file_list = _meta.file_list
+        split_path = _meta.split_path
+        assert split_path is not None
+        self.file_list = read_file_list(split_path, None, None, None)
         self.img_dir = _meta.img_dir
         self.seg_dir = _meta.seg_dir
         self.img_suffix = _meta.img_suffix
