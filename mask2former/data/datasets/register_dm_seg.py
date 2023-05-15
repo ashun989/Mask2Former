@@ -3,6 +3,7 @@ import os.path as osp
 import cv2
 import json
 from detectron2.data import DatasetCatalog, MetadataCatalog
+import warnings
 
 VOC_CLASSES = ['background', 'aeroplane', 'bicycle', 'bird', 'boat', 'bottle',
                'bus', 'car', 'cat', 'chair', 'cow', 'diningtable', 'dog',
@@ -67,7 +68,7 @@ def register_dm_seg(root, train_name, dm_name, ann_dir, split=None):
     try:
         file_list = read_file_list(split_path, img_dir, '.png')
     except FileNotFoundError as e:
-        print(f"File Not Found: {e}.\n Skip dataset: {train_name}")
+        warnings.warn(f"File Not Found: {e}.\n Skip dataset: {train_name}")
 
     DatasetCatalog.register(train_name,
                             lambda root=root, dm_name=dm_name, ann_dir=ann_dir, file_list=file_list: dm_train_dicts(
