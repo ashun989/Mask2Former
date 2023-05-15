@@ -69,6 +69,7 @@ def register_dm_seg(root, train_name, dm_name, ann_dir, split=None):
         file_list = read_file_list(split_path, img_dir, '.png')
     except FileNotFoundError as e:
         warnings.warn(f"File Not Found: {e}.\n Skip dataset: {train_name}")
+        return
 
     DatasetCatalog.register(train_name,
                             lambda root=root, dm_name=dm_name, ann_dir=ann_dir, file_list=file_list: dm_train_dicts(
