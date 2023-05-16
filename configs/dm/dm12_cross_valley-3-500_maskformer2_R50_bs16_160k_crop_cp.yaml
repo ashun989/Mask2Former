@@ -60,10 +60,10 @@ INPUT:
     SIZE: (0.625, 0.625)
     SINGLE_CATEGORY_MAX_AREA: 0.9
   COLOR_AUG_SSD: True
-  SIZE_DIVISIBILITY: -1  # used in dataset mapper
+  SIZE_DIVISIBILITY: 512  # used in dataset mapper
   FORMAT: "RGB"
   COPY_PASTE:
-    ENABLED: False
+    ENABLED: True
     BLEND: True
     SIGMA: 3
 #    RESIZE_RANGE: (0.8, 1.25)
