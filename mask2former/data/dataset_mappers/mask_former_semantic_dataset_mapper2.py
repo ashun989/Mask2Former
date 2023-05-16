@@ -2,6 +2,7 @@
 import copy
 import logging
 
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from torch.nn import functional as F
@@ -17,6 +18,25 @@ from ..transforms.aug_impl import CopyPaste
 
 __all__ = ["MaskFormerSemanticDatasetMapper2"]
 
+VOC_PALETTE = [[0, 0, 0], [128, 0, 0], [0, 128, 0], [128, 128, 0], [0, 0, 128],
+               [128, 0, 128], [0, 128, 128], [128, 128, 128], [64, 0, 0],
+               [192, 0, 0], [64, 128, 0], [192, 128, 0], [64, 0, 128],
+               [192, 0, 128], [64, 128, 128], [192, 128, 128], [0, 64, 0],
+               [128, 64, 0], [0, 192, 0], [128, 192, 0], [0, 64, 128]]
+
+
+def show_img(image, seg):
+    palette = np.array(VOC_PALETTE)
+    label = seg.astype(np.uint8)
+    img = image.astype(np.uint8)
+    is_ignore = label == 255
+    label[is_ignore] = 0
+    show_map = palette[label]
+    show_map[is_ignore] = np.array([255, 255, 255])
+    img = img * 0.3 + show_map * 0.7
+    img = img.astype(np.uint8)
+    plt.imshow(img)
+    plt.show()
 
 class MaskFormerSemanticDatasetMapper2:
     """
