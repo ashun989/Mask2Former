@@ -237,7 +237,7 @@ class MaskFormer(nn.Module):
         for i, (pred_seg, gt_seg, prob_cls, prob) in enumerate(zip(pred_segs, gt_segs, prob_clses, probs)):
             pred_mask = pred_seg == prob_cls
             gt_mask = gt_seg == prob_cls
-            if torch.sum(pred_mask * prob).item() > torch.sum(gt_mask * prob).item() > 0:
+            if torch.mean(pred_mask * prob).item() > torch.mean(gt_mask * prob).item() > 0:
                 pred_better_id.append(i)
         return pred_better_id
 
