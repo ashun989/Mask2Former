@@ -48,33 +48,42 @@ def read_file_list(split_path, default_dir, default_suffix, dm_root):
     return file_list
 
 
-def dm_train_dicts(dm_root, ann_dir, split):
-    # data_info_path = osp.join(dm_root, "data_infos.json")
-    # with open(data_info_path, 'r') as fp:
-    #     data_info = json.load(fp)
+def dm_train_dicts(dm_root, ann_dir, prob_dir=None, split=None):
+    data_info_path = osp.join(dm_root, "data_infos.json")
+    with open(data_info_path, 'r') as fp:
+        data_info = json.load(fp)
+
+    clsname2cid = {}
+    for cid, clsname in enumerate(VOC_CLASSES):
+        clsname2cid[clsname] = cid
 
     img_dir = osp.join(dm_root, 'img_dir', 'train')
     seg_dir = osp.join(dm_root, ann_dir)
+    if prob_dir is not None:
+        prob_dir = osp.join(dm_root, prob_dir)
 
     file_list = read_file_list(split, seg_dir, '.png', dm_root)
 
     dataset_dicts = []
     for name in file_list:
         record = {}
-        record['image_id'] = int(name)
-        filename = f"{record['image_id']:08}.png"
-        record['file_name'] = osp.join(img_dir,
-                                       filename)
+        image_id = int(name)
+        record['image_id'] = image_id
+        record['file_name'] = osp.join(img_dir, name + ".png")
         assert osp.isfile(record['file_name']), f"No such file: {record['file_name']}"
         record['height'] = 512
         record['width'] = 512
-        record['sem_seg_file_name'] = osp.join(seg_dir,
-                                               filename)
+        record['sem_seg_file_name'] = osp.join(seg_dir, name + ".png")
+        if prob_dir is not None:
+            di = data_info[image_id]
+            assert di['img_index'] == image_id
+            record['prob_cls'] = clsname2cid[di['concept']]
+            record['prob_file_name'] = osp.join(prob_dir, name + ".npy")
         dataset_dicts.append(record)
     return dataset_dicts
 
 
-def register_dm_seg(root, train_name, dm_name, ann_dir, split=None):
+def register_dm_seg(root, train_name, dm_name, ann_dir, split=None, prob_dir=None):
     if train_name in DatasetCatalog.keys():
         return
 
@@ -82,12 +91,17 @@ def register_dm_seg(root, train_name, dm_name, ann_dir, split=None):
     split_path = get_tmp_split_path(dm_root) if split is None else osp.join(dm_root, split)
     img_dir = osp.join(dm_root, 'img_dir', 'train')
     seg_dir = osp.join(dm_root, ann_dir)
+    if prob_dir is not None:
+        prob_dir = osp.join(dm_root, prob_dir)
 
     DatasetCatalog.register(train_name,
-                            lambda dm_root=dm_root, ann_dir=ann_dir, split=split_path: dm_train_dicts(
+                            lambda dm_root=dm_root, ann_dir=ann_dir,
+                                   split=split_path, prob_dir=prob_dir: dm_train_dicts(
                                 dm_root,
                                 ann_dir,
-                                split))
+                                prob_dir,
+                                split
+                            ))
     MetadataCatalog.get(train_name).set(
         stuff_classes=VOC_CLASSES,
         stuff_colors=VOC_PALETTE,
@@ -95,8 +109,10 @@ def register_dm_seg(root, train_name, dm_name, ann_dir, split=None):
         split_path=split_path,
         img_dir=img_dir,
         seg_dir=seg_dir,
+        prob_dir=prob_dir,
         img_suffix='.png',
-        seg_suffix='.png'
+        seg_suffix='.png',
+        prob_suffix='.npy'
     )
 
 
@@ -191,6 +207,11 @@ register_dm_seg(_root, "dm12_combine_linear-0.25", "DiffuseMade12",
 register_dm_seg(_root, "dm12_cross_valley-3-500_clip_fix_box-single_p1500", "DiffuseMade12",
                 "out_cross/out_ann_dir/valley-3-500-dcrf-0.05-0.95",
                 "imageset/cross_valley-3-500_clip_fix_box-single_p1500/good.txt")  # 60k
+
+register_dm_seg(_root, "dm12_cross_valley-3-500_clip_fix_box-single_p1500_prob", "DiffuseMade12",
+                "out_cross/out_ann_dir/valley-3-500-dcrf-0.05-0.95",
+                "imageset/cross_valley-3-500_clip_fix_box-single_p1500/good.txt",
+                "out_cross/out_prob_dir/dummy-no-0.5-0.5")  # 60k with prob
 
 register_dm_seg(_root, "dm12_combine_linear-0.25_clip_fix_box-single_p1500", "DiffuseMade12",
                 "out_combine/out_ann_dir/linear-0.25-dcrf-0.05-0.95",

@@ -15,6 +15,9 @@ from detectron2.projects.point_rend import ColorAugSSDTransform
 from detectron2.structures import BitMasks, Instances
 
 from ..transforms.aug_impl import CopyPaste
+from ..transforms.transform import CopyPasteTransform
+
+from ...utils.others import OptTargetRecord, parse_path
 
 __all__ = ["MaskFormerSemanticDatasetMapper2"]
 
@@ -38,6 +41,7 @@ def show_img(image, seg):
     plt.imshow(img)
     plt.show()
 
+
 class MaskFormerSemanticDatasetMapper2:
     """
     A callable which takes a dataset dict in Detectron2 Dataset format,
@@ -60,6 +64,9 @@ class MaskFormerSemanticDatasetMapper2:
             image_format,
             ignore_label,
             size_divisibility,
+            update_target=False,
+            dynamic_desert=False,
+            opt_target_dir=None
     ):
         """
         NOTE: this interface is experimental.
@@ -75,6 +82,9 @@ class MaskFormerSemanticDatasetMapper2:
         self.img_format = image_format
         self.ignore_label = ignore_label
         self.size_divisibility = size_divisibility
+        self.update_target = update_target
+        self.dynamic_desert = dynamic_desert
+        self.opt_target_record = OptTargetRecord(opt_target_dir)
 
         logger = logging.getLogger(__name__)
         mode = "training" if is_train else "inference"
@@ -129,6 +139,9 @@ class MaskFormerSemanticDatasetMapper2:
             "image_format": cfg.INPUT.FORMAT,
             "ignore_label": ignore_label,
             "size_divisibility": cfg.INPUT.SIZE_DIVISIBILITY,
+            "update_target": cfg.MODEL.UPDATE_TARGET,
+            "dynamic_desert": cfg.MODEL.DYNAMIC_DESERT,
+            "opt_target_dir": cfg.OPT_TARGET_DIR
         }
         return ret
 
@@ -146,11 +159,22 @@ class MaskFormerSemanticDatasetMapper2:
         image = utils.read_image(dataset_dict["file_name"], format=self.img_format)
         utils.check_image_size(dataset_dict, image)
 
-        if "sem_seg_file_name" in dataset_dict:
+        sem_seg_gt = None
+
+        if self.update_target:
+            if self.dynamic_desert:
+                raise NotImplementedError()
+                # TODO: make all foreground cls 255
+            sem_seg_gt = self.opt_target_record.read_seg(parse_path(dataset_dict["file_name"])[1])
+
+        if sem_seg_gt is None and "sem_seg_file_name" in dataset_dict:
             # PyTorch transformation not implemented for uint16, so converting it to double first
             sem_seg_gt = utils.read_image(dataset_dict.pop("sem_seg_file_name")).astype("double")
+
+        if "prob_file_name" in dataset_dict:
+            prob = np.load(dataset_dict.pop("prob_file_name"))
         else:
-            sem_seg_gt = None
+            prob = None
 
         if sem_seg_gt is None:
             raise ValueError(
@@ -164,10 +188,17 @@ class MaskFormerSemanticDatasetMapper2:
         image = aug_input.image
         sem_seg_gt = aug_input.sem_seg
 
+        if prob is not None:
+            for tf in transforms.transforms:
+                if not isinstance(tf, CopyPasteTransform):
+                    prob = tf.apply_segmentation(prob)
+
         # Pad image and segmentation label here!
         image = torch.as_tensor(np.ascontiguousarray(image.transpose(2, 0, 1)))
         if sem_seg_gt is not None:
             sem_seg_gt = torch.as_tensor(sem_seg_gt.astype("long"))
+        if prob is not None:
+            prob = torch.as_tensor(prob.copy())
 
         if self.size_divisibility > 0:
             image_size = (image.shape[-2], image.shape[-1])
@@ -180,6 +211,8 @@ class MaskFormerSemanticDatasetMapper2:
             image = F.pad(image, padding_size, value=128).contiguous()
             if sem_seg_gt is not None:
                 sem_seg_gt = F.pad(sem_seg_gt, padding_size, value=self.ignore_label).contiguous()
+            if prob is not None:
+                prob = F.pad(prob, padding_size, value=0.0).contiguous()
 
         image_shape = (image.shape[-2], image.shape[-1])  # h, w
 
@@ -190,6 +223,9 @@ class MaskFormerSemanticDatasetMapper2:
 
         if sem_seg_gt is not None:
             dataset_dict["sem_seg"] = sem_seg_gt.long()
+
+        if prob is not None:
+            dataset_dict["prob"] = prob
 
         if "annotations" in dataset_dict:
             raise ValueError("Semantic segmentation dataset should not have 'annotations'.")

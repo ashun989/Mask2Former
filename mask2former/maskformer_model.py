@@ -1,6 +1,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates.
 from typing import Tuple
 
+import numpy as np
 import torch
 from torch import nn
 from torch.nn import functional as F
@@ -16,6 +17,8 @@ from detectron2.utils.memory import retry_if_cuda_oom
 from .modeling.criterion import SetCriterion
 from .modeling.matcher import HungarianMatcher
 
+from .utils.others import parse_path, OptTargetRecord
+
 
 @META_ARCH_REGISTRY.register()
 class MaskFormer(nn.Module):
@@ -25,24 +28,30 @@ class MaskFormer(nn.Module):
 
     @configurable
     def __init__(
-        self,
-        *,
-        backbone: Backbone,
-        sem_seg_head: nn.Module,
-        criterion: nn.Module,
-        num_queries: int,
-        object_mask_threshold: float,
-        overlap_threshold: float,
-        metadata,
-        size_divisibility: int,
-        sem_seg_postprocess_before_inference: bool,
-        pixel_mean: Tuple[float],
-        pixel_std: Tuple[float],
-        # inference
-        semantic_on: bool,
-        panoptic_on: bool,
-        instance_on: bool,
-        test_topk_per_image: int,
+            self,
+            *,
+            backbone: Backbone,
+            sem_seg_head: nn.Module,
+            criterion: nn.Module,
+            num_queries: int,
+            object_mask_threshold: float,
+            overlap_threshold: float,
+            metadata,
+            size_divisibility: int,
+            sem_seg_postprocess_before_inference: bool,
+            pixel_mean: Tuple[float],
+            pixel_std: Tuple[float],
+            # inference
+            semantic_on: bool,
+            panoptic_on: bool,
+            instance_on: bool,
+            test_topk_per_image: int,
+            # target update
+            update_target: bool,
+            tgt_update_warmup: int,
+            dynamic_desert: bool,
+            iou_threshold: float,
+            opt_target_dir: str
     ):
         """
         Args:
@@ -92,6 +101,15 @@ class MaskFormer(nn.Module):
 
         if not self.semantic_on:
             assert self.sem_seg_postprocess_before_inference
+
+        # target update parameters
+        self.register_buffer("forward_batches", torch.zeros(1, dtype=torch.int64))
+        self.update_target = update_target
+        self.tgt_update_warmup = tgt_update_warmup
+        self.finish_warmup = False
+        self.dynamic_desert = dynamic_desert
+        self.iou_threshold = iou_threshold
+        self.opt_target_record = OptTargetRecord(opt_target_dir)
 
     @classmethod
     def from_config(cls, cfg):
@@ -147,9 +165,9 @@ class MaskFormer(nn.Module):
             "metadata": MetadataCatalog.get(cfg.DATASETS.TRAIN[0]),
             "size_divisibility": cfg.MODEL.MASK_FORMER.SIZE_DIVISIBILITY,
             "sem_seg_postprocess_before_inference": (
-                cfg.MODEL.MASK_FORMER.TEST.SEM_SEG_POSTPROCESSING_BEFORE_INFERENCE
-                or cfg.MODEL.MASK_FORMER.TEST.PANOPTIC_ON
-                or cfg.MODEL.MASK_FORMER.TEST.INSTANCE_ON
+                    cfg.MODEL.MASK_FORMER.TEST.SEM_SEG_POSTPROCESSING_BEFORE_INFERENCE
+                    or cfg.MODEL.MASK_FORMER.TEST.PANOPTIC_ON
+                    or cfg.MODEL.MASK_FORMER.TEST.INSTANCE_ON
             ),
             "pixel_mean": cfg.MODEL.PIXEL_MEAN,
             "pixel_std": cfg.MODEL.PIXEL_STD,
@@ -158,11 +176,78 @@ class MaskFormer(nn.Module):
             "instance_on": cfg.MODEL.MASK_FORMER.TEST.INSTANCE_ON,
             "panoptic_on": cfg.MODEL.MASK_FORMER.TEST.PANOPTIC_ON,
             "test_topk_per_image": cfg.TEST.DETECTIONS_PER_IMAGE,
+            # target update
+            "update_target": cfg.MODEL.UPDATE_TARGET,
+            "tgt_update_warmup": cfg.MODEL.TGT_UPDATE_WARMUP,
+            "dynamic_desert": cfg.MODEL.DYNAMIC_DESERT,
+            "iou_threshold": cfg.MODEL.IOU_THRESHOLD,
+            "opt_target_dir": cfg.OPT_TARGET_DIR
         }
 
     @property
     def device(self):
         return self.pixel_mean.device
+
+    def need_to_update_target(self, batch_per_gpu):
+        if not self.update_target:
+            return False
+        if self.finish_warmup:
+            return True
+        self.forward_batches += batch_per_gpu
+        forward_batches_copy = self.forward_batches.clone()
+        torch.distributed.all_reduce(forward_batches_copy, op=torch.distributed.ReduceOp.SUM)
+        ans = forward_batches_copy >= self.tgt_update_warmup
+        self.finish_warmup = ans.item()
+        return self.finish_warmup
+
+    def get_pred_seg_in_training(self, outputs, image_shape):
+        mask_cls_results = outputs["pred_logits"]
+        mask_pred_results = outputs["pred_masks"]
+        # upsample masks
+        mask_pred_results = F.interpolate(
+            mask_pred_results,
+            size=image_shape,
+            mode="bilinear",
+            align_corners=False,
+        )
+        sem_segs = []
+        for mask_cls_result, mask_pred_result in zip(mask_cls_results, mask_pred_results):
+            pred_seg = self.semantic_inference(mask_cls_result, mask_pred_result)
+            sem_segs.append(pred_seg.argmax(dim=0))
+        return torch.stack(sem_segs)
+
+    def find_deserted_pair(self, pred_segs, gt_segs, prob_clses):
+        # TODO: parallelize
+        deserted_id = []
+        for i, (pred_seg, gt_seg, prob_cls) in enumerate(zip(pred_segs, gt_segs, prob_clses)):
+            pred_mask = pred_seg == prob_cls
+            gt_mask = gt_seg == prob_cls
+            iou = torch.logical_and(pred_mask, gt_mask).sum() / (torch.logical_or(pred_mask, gt_mask).sum() + 1e-5)
+            if iou.item() <= self.iou_threshold:
+                deserted_id.append(i)
+        return deserted_id
+
+    def record_deserted(self, names, deserted_id):
+        for i in deserted_id:
+            self.opt_target_record.update_info(names[i], dict(deserted=True))
+
+    def find_pred_better_by_prob(self, pred_segs, gt_segs, prob_clses, probs):
+        # TODO: parallelize
+        pred_better_id = []
+        for i, (pred_seg, gt_seg, prob_cls, prob) in enumerate(zip(pred_segs, gt_segs, prob_clses, probs)):
+            pred_mask = pred_seg == prob_cls
+            gt_mask = gt_seg == prob_cls
+            if torch.sum(pred_mask * prob).item() > torch.sum(gt_mask * prob).item() > 0:
+                pred_better_id.append(i)
+        return pred_better_id
+
+    def update_segs(self, names, pred_segs, pred_better_id):
+        for i in pred_better_id:
+            info = self.opt_target_record.read_info(names[i])
+            info["times"] = info.get("times", 0) + 1
+            self.opt_target_record.write_info(names[i], info)
+            self.opt_target_record.write_seg(names[i], pred_segs[i].cpu().numpy())
+
 
     def forward(self, batched_inputs):
         """
@@ -201,7 +286,9 @@ class MaskFormer(nn.Module):
             # mask classification target
             if "instances" in batched_inputs[0]:
                 gt_instances = [x["instances"].to(self.device) for x in batched_inputs]
-                targets = self.prepare_targets(gt_instances, images)
+                prob_batch = [x["prob"].to(self.device) for x in batched_inputs]
+                prob_cls_batch = [x["prob_cls"] for x in batched_inputs]
+                targets = self.prepare_targets_with_prob(gt_instances, images, prob_batch, prob_cls_batch)
             else:
                 targets = None
 
@@ -214,6 +301,20 @@ class MaskFormer(nn.Module):
                 else:
                     # remove this loss if not specified in `weight_dict`
                     losses.pop(k)
+
+            with torch.no_grad():
+                if self.need_to_update_target(len(batched_inputs)):
+                    pred_segs = self.get_pred_seg_in_training(outputs, images.tensor.shape[2:])
+                    gt_segs = torch.stack([x["sem_seg"] for x in batched_inputs])
+                    probs = torch.stack([x["prob"] for x in batched_inputs])
+                    prob_clses = [x["prob_cls"] for x in batched_inputs]
+                    names = [parse_path(x["file_name"])[1] for x in batched_inputs]
+                    if self.dynamic_desert:
+                        deserted_id = self.find_deserted_pair(pred_segs, gt_segs, prob_clses)
+                        self.record_deserted(names, deserted_id)
+                    pred_better_id = self.find_pred_better_by_prob(pred_segs, gt_segs, prob_clses, probs)
+                    self.update_segs(names, pred_segs, pred_better_id)
+
             return losses
         else:
             mask_cls_results = outputs["pred_logits"]
@@ -230,7 +331,7 @@ class MaskFormer(nn.Module):
 
             processed_results = []
             for mask_cls_result, mask_pred_result, input_per_image, image_size in zip(
-                mask_cls_results, mask_pred_results, batched_inputs, images.image_sizes
+                    mask_cls_results, mask_pred_results, batched_inputs, images.image_sizes
             ):
                 height = input_per_image.get("height", image_size[0])
                 width = input_per_image.get("width", image_size[1])
@@ -253,7 +354,7 @@ class MaskFormer(nn.Module):
                 if self.panoptic_on:
                     panoptic_r = retry_if_cuda_oom(self.panoptic_inference)(mask_cls_result, mask_pred_result)
                     processed_results[-1]["panoptic_seg"] = panoptic_r
-                
+
                 # instance segmentation inference
                 if self.instance_on:
                     instance_r = retry_if_cuda_oom(self.instance_inference)(mask_cls_result, mask_pred_result)
@@ -273,6 +374,26 @@ class MaskFormer(nn.Module):
                 {
                     "labels": targets_per_image.gt_classes,
                     "masks": padded_masks,
+                }
+            )
+        return new_targets
+
+    def prepare_targets_with_prob(self, targets, images, prob_batch, prob_cls_batch):
+        h_pad, w_pad = images.tensor.shape[-2:]
+        new_targets = []
+        for targets_per_image, prob, prob_cls in zip(targets, prob_batch, prob_cls_batch):
+            # pad gt
+            gt_masks = targets_per_image.gt_masks
+            padded_masks = torch.zeros((gt_masks.shape[0], h_pad, w_pad), dtype=gt_masks.dtype, device=gt_masks.device)
+            padded_masks[:, : gt_masks.shape[1], : gt_masks.shape[2]] = gt_masks
+            padded_prob = torch.zeros((h_pad, w_pad), dtype=prob.dtype, device=prob.device)
+            padded_prob[:prob.shape[0], :prob.shape[1]] = prob
+            new_targets.append(
+                {
+                    "labels": targets_per_image.gt_classes,
+                    "masks": padded_masks,
+                    "prob": padded_prob,
+                    "prob_cls": prob_cls
                 }
             )
         return new_targets
@@ -347,7 +468,8 @@ class MaskFormer(nn.Module):
 
         # [Q, K]
         scores = F.softmax(mask_cls, dim=-1)[:, :-1]
-        labels = torch.arange(self.sem_seg_head.num_classes, device=self.device).unsqueeze(0).repeat(self.num_queries, 1).flatten(0, 1)
+        labels = torch.arange(self.sem_seg_head.num_classes, device=self.device).unsqueeze(0).repeat(self.num_queries,
+                                                                                                     1).flatten(0, 1)
         # scores_per_image, topk_indices = scores.flatten(0, 1).topk(self.num_queries, sorted=False)
         scores_per_image, topk_indices = scores.flatten(0, 1).topk(self.test_topk_per_image, sorted=False)
         labels_per_image = labels[topk_indices]
@@ -374,7 +496,8 @@ class MaskFormer(nn.Module):
         # result.pred_boxes = BitMasks(mask_pred > 0).get_bounding_boxes()
 
         # calculate average mask prob
-        mask_scores_per_image = (mask_pred.sigmoid().flatten(1) * result.pred_masks.flatten(1)).sum(1) / (result.pred_masks.flatten(1).sum(1) + 1e-6)
+        mask_scores_per_image = (mask_pred.sigmoid().flatten(1) * result.pred_masks.flatten(1)).sum(1) / (
+                result.pred_masks.flatten(1).sum(1) + 1e-6)
         result.scores = scores_per_image * mask_scores_per_image
         result.pred_classes = labels_per_image
         return result

@@ -57,6 +57,7 @@ from mask2former import (
     MaskFormerSemanticDatasetMapper2,
     SemanticSegmentorWithTTA,
     add_maskformer2_config,
+    add_target_update_config
 )
 
 from mask2former.utils.others import parse_path
@@ -292,14 +293,20 @@ def setup(args):
     # for poly lr schedule
     add_deeplab_config(cfg)
     add_maskformer2_config(cfg)
+    add_target_update_config(cfg)
     cfg.merge_from_file(args.config_file)
     cfg.merge_from_list(args.opts)
     config_name= parse_path(args.config_file)[1]
     cfg.OUTPUT_DIR = os.path.join("outputs", config_name)
+    cfg.OPT_TARGET_DIR = os.path.join(cfg.OUTPUT_DIR, "opt_targets")
     cfg.freeze()
     default_setup(cfg, args)
     # Setup logger for "mask_former" module
-    setup_logger(output=cfg.OUTPUT_DIR, distributed_rank=comm.get_rank(), name="mask2former")
+    logger = setup_logger(output=cfg.OUTPUT_DIR, distributed_rank=comm.get_rank(), name="mask2former")
+    if cfg.MODEL.UPDATE_TARGET:
+        os.makedirs(cfg.OPT_TARGET_DIR, exist_ok=True)
+        logger.info(f"OPT_TARGET_DIR={cfg.OPT_TARGET_DIR}")
+
     return cfg
 
 

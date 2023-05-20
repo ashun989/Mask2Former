@@ -3,6 +3,13 @@
 from detectron2.config import CfgNode as CN
 
 
+def add_target_update_config(cfg):
+    cfg.MODEL.UPDATE_TARGET = False
+    cfg.MODEL.TGT_UPDATE_WARMUP = 60000
+    cfg.MODEL.DYNAMIC_DESERT = False
+    cfg.MODEL.IOU_THRESHOLD = 0.0
+
+
 def add_maskformer2_config(cfg):
     """
     Add config for MASK_FORMER.
@@ -124,3 +131,5 @@ def add_maskformer2_config(cfg):
     # Importance sampling parameter for PointRend point sampling during training. Parametr `beta` in
     # the original paper.
     cfg.MODEL.MASK_FORMER.IMPORTANCE_SAMPLE_RATIO = 0.75
+
+    # update target configs
