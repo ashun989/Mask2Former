@@ -286,9 +286,9 @@ class MaskFormer(nn.Module):
             # mask classification target
             if "instances" in batched_inputs[0]:
                 gt_instances = [x["instances"].to(self.device) for x in batched_inputs]
-                prob_batch = [x["prob"].to(self.device) for x in batched_inputs]
-                prob_cls_batch = [x["prob_cls"] for x in batched_inputs]
-                targets = self.prepare_targets_with_prob(gt_instances, images, prob_batch, prob_cls_batch)
+                # prob_batch = [x["prob"].to(self.device) for x in batched_inputs]
+                # prob_cls_batch = [x["prob_cls"] for x in batched_inputs]
+                targets = self.prepare_targets(gt_instances, images)
             else:
                 targets = None
 

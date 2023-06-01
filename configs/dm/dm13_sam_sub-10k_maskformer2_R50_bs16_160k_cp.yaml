@@ -1,0 +1,16 @@
+_BASE_: dm13_sam_maskformer2_R50_bs16_160k.yaml
+DATASETS:
+  TRAIN: ("dm13_sam_sub10k",)
+INPUT:
+  DATASET_MAPPER_NAME: "mask_former_semantic2"
+  COPY_PASTE:
+    ENABLED: True
+    BLEND: True
+    SIGMA: 3
+#    RESIZE_RANGE: (0.8, 1.25)
+#    CROP_SIZE: (0.8, 0.8)
+    PAD_VALUE: 128
+    SEG_PAD_VALUE: 255
+#    FLIP_PROB: 0.5
+    PROB: 0.5
+    USE_SCALE_JITTOR: False

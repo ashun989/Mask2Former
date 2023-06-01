@@ -220,3 +220,12 @@ register_dm_seg(_root, "dm12_combine_linear-0.25_clip_fix_box-single_p1500", "Di
 register_dm_seg(_root, "dm12_cross_valley-3-500_clip_fix_box-single_p4000", "DiffuseMade12",
                 "out_cross/out_ann_dir/valley-3-500-dcrf-0.05-0.95",
                 "imageset/cross_valley-3-500_clip_fix_box-single_p4000/good.txt")  # 10k
+
+# ====================================================================
+
+register_dm_seg(_root, "dm13_sam", "DiffuseMade13",
+                "out_sam/out_ann_dir/dummy-no-0.5-0.5")  # 20k
+
+register_dm_seg(_root, "dm13_sam_sub10k", "DiffuseMade13",
+                "out_sam/out_ann_dir/dummy-no-0.5-0.5",
+                "imageset/sam_clip_fix_box-single_p500/good.txt")  # 10k
