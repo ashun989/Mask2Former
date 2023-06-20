@@ -1,0 +1,10 @@
+_BASE_: dm12_cross_valley-3-500_maskformer2_R50_bs16_160k.yaml
+DATASETS:
+  TRAIN: ("dm12_cross_valley-3-500_clip_fix_box-single_p1500",)
+INPUT:
+  DATASET_MAPPER_NAME: "mask_former_semantic2"
+MODEL:
+  WEIGHTS: "outputs/dm12_cross_valley-3-500_sub-60k_maskformer2_R50_bs16_160k/model_0034999.pth"
+  UPDATE_TARGET: True
+  TGT_UPDATE_WARMUP: 0
+  CONF_THRESHOLD: 0.3
