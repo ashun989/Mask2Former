@@ -4,7 +4,7 @@ DATASETS:
 INPUT:
   DATASET_MAPPER_NAME: "mask_former_semantic2"
 MODEL:
+  WEIGHTS: "outputs/dm12_cross_valley-3-500_sub-60k_maskformer2_R50_bs16_160k/model_0034999.pth"
   UPDATE_TARGET: True
-  TGT_UPDATE_WARMUP: 16 * 5000
-  DYNAMIC_DESERT: False
-  IOU_THRESHOLD: 0.1
+  TGT_UPDATE_WARMUP: 0
+  CONF_THRESHOLD: 0.2

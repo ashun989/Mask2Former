@@ -65,8 +65,6 @@ class MaskFormerSemanticDatasetMapper2:
             ignore_label,
             size_divisibility,
             update_target=False,
-            dynamic_desert=False,
-            opt_target_dir=None
     ):
         """
         NOTE: this interface is experimental.
@@ -82,9 +80,6 @@ class MaskFormerSemanticDatasetMapper2:
         self.img_format = image_format
         self.ignore_label = ignore_label
         self.size_divisibility = size_divisibility
-        self.update_target = update_target
-        self.dynamic_desert = dynamic_desert
-        self.opt_target_record = OptTargetRecord(opt_target_dir)
 
         logger = logging.getLogger(__name__)
         mode = "training" if is_train else "inference"
@@ -139,9 +134,6 @@ class MaskFormerSemanticDatasetMapper2:
             "image_format": cfg.INPUT.FORMAT,
             "ignore_label": ignore_label,
             "size_divisibility": cfg.INPUT.SIZE_DIVISIBILITY,
-            "update_target": cfg.MODEL.UPDATE_TARGET,
-            "dynamic_desert": cfg.MODEL.DYNAMIC_DESERT,
-            "opt_target_dir": cfg.OPT_TARGET_DIR
         }
         return ret
 
@@ -161,13 +153,7 @@ class MaskFormerSemanticDatasetMapper2:
 
         sem_seg_gt = None
 
-        if self.update_target:
-            if self.dynamic_desert:
-                raise NotImplementedError()
-                # TODO: make all foreground cls 255
-            sem_seg_gt = self.opt_target_record.read_seg(parse_path(dataset_dict["file_name"])[1])
-
-        if sem_seg_gt is None and "sem_seg_file_name" in dataset_dict:
+        if "sem_seg_file_name" in dataset_dict:
             # PyTorch transformation not implemented for uint16, so converting it to double first
             sem_seg_gt = utils.read_image(dataset_dict.pop("sem_seg_file_name")).astype("double")
 

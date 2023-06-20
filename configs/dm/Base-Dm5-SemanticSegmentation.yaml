@@ -13,10 +13,6 @@ MODEL:
     OUT_FEATURES: ["res2", "res3", "res4", "res5"]
     # NORM: "SyncBN"
     RES5_MULTI_GRID: [1, 1, 1]  # not used
-  UPDATE_TARGET: False
-  TGT_UPDATE_WARMUP: 16
-  DYNAMIC_DESERT: False
-  IOU_THRESHOLD: 0.1
 DATASETS:
   TRAIN: ("dm5_seg_train",)
   TEST: ("voc_seg_val",)

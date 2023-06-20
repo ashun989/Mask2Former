@@ -6,8 +6,7 @@ from detectron2.config import CfgNode as CN
 def add_target_update_config(cfg):
     cfg.MODEL.UPDATE_TARGET = False
     cfg.MODEL.TGT_UPDATE_WARMUP = 60000
-    cfg.MODEL.DYNAMIC_DESERT = False
-    cfg.MODEL.IOU_THRESHOLD = 0.0
+    cfg.MODEL.CONF_THRESHOLD = 0.4
 
 
 def add_maskformer2_config(cfg):

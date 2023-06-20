@@ -298,14 +298,10 @@ def setup(args):
     cfg.merge_from_list(args.opts)
     config_name= parse_path(args.config_file)[1]
     cfg.OUTPUT_DIR = os.path.join("outputs", config_name)
-    cfg.OPT_TARGET_DIR = os.path.join(cfg.OUTPUT_DIR, "opt_targets")
     cfg.freeze()
     default_setup(cfg, args)
     # Setup logger for "mask_former" module
-    logger = setup_logger(output=cfg.OUTPUT_DIR, distributed_rank=comm.get_rank(), name="mask2former")
-    if cfg.MODEL.UPDATE_TARGET:
-        os.makedirs(cfg.OPT_TARGET_DIR, exist_ok=True)
-        logger.info(f"OPT_TARGET_DIR={cfg.OPT_TARGET_DIR}")
+    setup_logger(output=cfg.OUTPUT_DIR, distributed_rank=comm.get_rank(), name="mask2former")
 
     return cfg
 
