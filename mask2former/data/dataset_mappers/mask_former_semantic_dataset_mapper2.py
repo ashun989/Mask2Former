@@ -157,10 +157,10 @@ class MaskFormerSemanticDatasetMapper2:
             # PyTorch transformation not implemented for uint16, so converting it to double first
             sem_seg_gt = utils.read_image(dataset_dict.pop("sem_seg_file_name")).astype("double")
 
-        if "prob_file_name" in dataset_dict:
-            prob = np.load(dataset_dict.pop("prob_file_name"))
-        else:
-            prob = None
+        # if "prob_file_name" in dataset_dict:
+        #     prob = np.load(dataset_dict.pop("prob_file_name"))
+        # else:
+        #     prob = None
 
         if sem_seg_gt is None:
             raise ValueError(
@@ -174,17 +174,17 @@ class MaskFormerSemanticDatasetMapper2:
         image = aug_input.image
         sem_seg_gt = aug_input.sem_seg
 
-        if prob is not None:
-            for tf in transforms.transforms:
-                if not isinstance(tf, CopyPasteTransform):
-                    prob = tf.apply_segmentation(prob)
+        # if prob is not None:
+        #     for tf in transforms.transforms:
+        #         if not isinstance(tf, CopyPasteTransform):
+        #             prob = tf.apply_segmentation(prob)
 
         # Pad image and segmentation label here!
         image = torch.as_tensor(np.ascontiguousarray(image.transpose(2, 0, 1)))
         if sem_seg_gt is not None:
             sem_seg_gt = torch.as_tensor(sem_seg_gt.astype("long"))
-        if prob is not None:
-            prob = torch.as_tensor(prob.copy())
+        # if prob is not None:
+        #     prob = torch.as_tensor(prob.copy())
 
         if self.size_divisibility > 0:
             image_size = (image.shape[-2], image.shape[-1])
@@ -197,8 +197,8 @@ class MaskFormerSemanticDatasetMapper2:
             image = F.pad(image, padding_size, value=128).contiguous()
             if sem_seg_gt is not None:
                 sem_seg_gt = F.pad(sem_seg_gt, padding_size, value=self.ignore_label).contiguous()
-            if prob is not None:
-                prob = F.pad(prob, padding_size, value=0.0).contiguous()
+            # if prob is not None:
+            #     prob = F.pad(prob, padding_size, value=0.0).contiguous()
 
         image_shape = (image.shape[-2], image.shape[-1])  # h, w
 
@@ -210,8 +210,8 @@ class MaskFormerSemanticDatasetMapper2:
         if sem_seg_gt is not None:
             dataset_dict["sem_seg"] = sem_seg_gt.long()
 
-        if prob is not None:
-            dataset_dict["prob"] = prob
+        # if prob is not None:
+        #     dataset_dict["prob"] = prob
 
         if "annotations" in dataset_dict:
             raise ValueError("Semantic segmentation dataset should not have 'annotations'.")

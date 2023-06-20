@@ -208,10 +208,10 @@ register_dm_seg(_root, "dm12_cross_valley-3-500_clip_fix_box-single_p1500", "Dif
                 "out_cross/out_ann_dir/valley-3-500-dcrf-0.05-0.95",
                 "imageset/cross_valley-3-500_clip_fix_box-single_p1500/good.txt")  # 60k
 
-register_dm_seg(_root, "dm12_cross_valley-3-500_clip_fix_box-single_p1500_prob", "DiffuseMade12",
-                "out_cross/out_ann_dir/valley-3-500-dcrf-0.05-0.95",
-                "imageset/cross_valley-3-500_clip_fix_box-single_p1500/good.txt",
-                "out_cross/out_prob_dir/dummy-no-0.5-0.5")  # 60k with prob
+# register_dm_seg(_root, "dm12_cross_valley-3-500_clip_fix_box-single_p1500_prob", "DiffuseMade12",
+#                 "out_cross/out_ann_dir/valley-3-500-dcrf-0.05-0.95",
+#                 "imageset/cross_valley-3-500_clip_fix_box-single_p1500/good.txt",
+#                 "out_cross/out_prob_dir/dummy-no-0.5-0.5")  # 60k with prob
 
 register_dm_seg(_root, "dm12_combine_linear-0.25_clip_fix_box-single_p1500", "DiffuseMade12",
                 "out_combine/out_ann_dir/linear-0.25-dcrf-0.05-0.95",
