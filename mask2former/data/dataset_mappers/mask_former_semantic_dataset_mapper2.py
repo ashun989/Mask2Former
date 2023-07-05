@@ -64,7 +64,6 @@ class MaskFormerSemanticDatasetMapper2:
             image_format,
             ignore_label,
             size_divisibility,
-            update_target=False,
     ):
         """
         NOTE: this interface is experimental.
